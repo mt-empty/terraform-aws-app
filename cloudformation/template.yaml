@@ -160,7 +160,7 @@ Resources:
               Ref: ApiGatewayApi
     Metadata:
       DockerTag: python3.7-v1
-      DockerContext: ./src
+      DockerContext: ../lambdaObjectDetection/src
       Dockerfile: Dockerfile
     DependsOn:
       - S3Bucket
