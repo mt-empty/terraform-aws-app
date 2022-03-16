@@ -1,0 +1,340 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  terraform-aws
+
+  Sample SAM Template for terraform-aws
+Parameters:
+  AuthName:
+    Type: String
+    Description: Unique Auth Name for Cognito Resources
+    Default: terraform-aws-object-detection
+    AllowedValues:
+      - terraform-aws-object-detection
+      - terraform-aws-object-detection1
+      - terraform-aws-object-detection2
+      - terraform-aws-object-detection3
+  LabRole:
+    Type: String
+    Default: arn:aws:iam::410049157761:role/LabRole
+  UserEmail:
+    Type: String
+    Description: Test user's email
+    Default: EMAIL
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    MemorySize: 256
+    Timeout: 15
+
+Conditions:
+  HasEmail: !Not [!Equals [!Ref UserEmail, EMAIL]]
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: terraform-aws-images-prod
+      AccessControl: BucketOwnerFullControl
+    # DeletionPolicy: Delete
+
+  imagesDB:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: images
+      # BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        # -
+        #   AttributeName: "name"
+        #   AttributeType: "S"
+        # -
+        #   AttributeName: "tags"
+        #   AttributeType: "SS"
+      KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 100
+        WriteCapacityUnits: 100
+
+  tagsDB:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: tags
+      # BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        # -
+        #   AttributeName: "relatedImages"
+        #   AttributeType: "SS"
+      KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+        # -
+        #   AttributeName: "relatedImages"
+        #   KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 100
+        WriteCapacityUnits: 100
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'POST, PUT, OPTIONS'"
+        AllowHeaders: "'*'"
+        # AllowOrigin: "'https://127.0.0.1:5000/'"
+        AllowOrigin: "'*'"
+        MaxAge: "'1000'"
+      Auth:
+        AddDefaultAuthorizerToCorsPreflight: False
+        DefaultAuthorizer: MyCognitoAuthorizer
+        Authorizers:
+          MyCognitoAuthorizer:
+            UserPoolArn:
+              Fn::GetAtt:
+                - UserPool
+                - Arn
+            Identity:
+              Header: Authorization
+
+  ObjectDetectionFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      Role: !Sub ${LabRole}
+      PackageType: Image
+      Description: Function that is called when an image is stored in S3.
+      Events:
+        # S3Bucket:
+        #   Type: S3
+        #   Properties:
+        #     Bucket: !Ref S3Bucket
+        #     Events: 's3:ObjectCreated:*'
+        # APIGatewayWelcome:
+        #   Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+        #   Properties:
+        #     Path: /
+        #     Method: get
+        #     RestApiId:
+        #       Ref: ApiGatewayApi
+        #     Auth:
+        #       Authorizer: 'NONE'
+        APIGatewayUpload:
+          Type: Api
+          Properties:
+            Path: /upload
+            Method: put
+            RestApiId:
+              Ref: ApiGatewayApi
+        APIGatewayDetect:
+          Type: Api
+          Properties:
+            Path: /detect
+            Method: post
+            RestApiId:
+              Ref: ApiGatewayApi
+        APIGatewaySearch:
+          Type: Api
+          Properties:
+            Path: /search
+            Method: post
+            RestApiId:
+              Ref: ApiGatewayApi
+        APIGatewayDelete:
+          Type: Api
+          Properties:
+            Path: /delete
+            Method: post
+            RestApiId:
+              Ref: ApiGatewayApi
+        APIGatewayRemove:
+          Type: Api
+          Properties:
+            Path: /remove
+            Method: post
+            RestApiId:
+              Ref: ApiGatewayApi
+    Metadata:
+      DockerTag: python3.7-v1
+      DockerContext: ./src
+      Dockerfile: Dockerfile
+    DependsOn:
+      - S3Bucket
+      - imagesDB
+      - tagsDB
+
+  # Creates a user pool in cognito
+  UserPool:
+    Type: "AWS::Cognito::UserPool"
+    Properties:
+      UserPoolName: !Sub ${AuthName}-user-pool
+      AutoVerifiedAttributes:
+        # - phone_number
+        - email
+      Schema:
+        - Name: given_name
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: family_name
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: email
+          AttributeDataType: String
+          Mutable: false
+          Required: true
+        # - Name: phone_number
+        #   AttributeDataType: String
+        #   Mutable: false
+        #   Required: false
+
+  # Creates a User Pool Client to be used by the identity pool
+  UserPoolClient:
+    Type: "AWS::Cognito::UserPoolClient"
+    Properties:
+      AllowedOAuthScopes:
+        - openid
+      ClientName: !Sub ${AuthName}-client
+      CallbackURLs:
+        - !Sub https://127.0.0.1:5000/query
+      LogoutURLs:
+        - !Sub https://127.0.0.1:5000/
+      SupportedIdentityProviders:
+        - COGNITO
+      AllowedOAuthFlows:
+        - code
+        - implicit
+      GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      UserPoolId: !Ref UserPool
+
+  # Creates a federated Identity pool
+  IdentityPool:
+    Type: "AWS::Cognito::IdentityPool"
+    Properties:
+      IdentityPoolName: !Sub ${AuthName}-identity
+      AllowUnauthenticatedIdentities: true
+      CognitoIdentityProviders:
+        - ClientId: !Ref UserPoolClient
+          ProviderName: !GetAtt UserPool.ProviderName
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref UserPool
+      Domain: !Sub ${AuthName}-app
+
+  TestUser:
+    Condition: HasEmail
+    Type: AWS::Cognito::UserPoolUser
+    Properties:
+      UserPoolId: !Ref UserPool
+      Username: !Ref UserEmail
+      UserAttributes:
+        - Name: email
+          Value: !Ref UserEmail
+  # # Create a role for unauthorized access to AWS resources. Very limited access. Only allows users in the previously created Identity Pool
+  # CognitoUnAuthorizedRole:
+  #   Type: "AWS::IAM::Role"
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: "Allow"
+  #           Principal:
+  #             Federated: "cognito-identity.amazonaws.com"
+  #           Action:
+  #             - "sts:AssumeRoleWithWebIdentity"
+  #           Condition:
+  #             StringEquals:
+  #               "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+  #             "ForAnyValue:StringLike":
+  #               "cognito-identity.amazonaws.com:amr": unauthenticated
+  #     Policies:
+  #       - PolicyName: "CognitoUnauthorizedPolicy"
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: "Allow"
+  #               Action:
+  #                 - "cognito-sync:*"
+  #               Resource: "*"
+
+  # # Create a role for authorized acces to AWS resources. Control what your user can access. This example only allows Lambda invokation
+  # # Only allows users in the previously created Identity Pool
+  # CognitoAuthorizedRole:
+  #   Type: "AWS::IAM::Role"
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: "Allow"
+  #           Principal:
+  #             Federated: "cognito-identity.amazonaws.com"
+  #           Action:
+  #             - "sts:AssumeRoleWithWebIdentity"
+  #           Condition:
+  #             StringEquals:
+  #               "cognito-identity.amazonaws.com:aud": !Ref IdentityPool
+  #             "ForAnyValue:StringLike":
+  #               "cognito-identity.amazonaws.com:amr": authenticated
+  #     Policies:
+  #       - PolicyName: "CognitoAuthorizedPolicy"
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: "Allow"
+  #               Action:
+  #                 - "cognito-sync:*"
+  #                 - "cognito-identity:*"
+  #               Resource: "*"
+  #             - Effect: "Allow"
+  #               Action:
+  #                 - "lambda:InvokeFunction"
+  #               Resource: "*"
+
+  # Assigns the roles to the Identity Pool
+  IdentityPoolRoleMapping:
+    Type: "AWS::Cognito::IdentityPoolRoleAttachment"
+    Properties:
+      IdentityPoolId: !Ref IdentityPool
+      Roles:
+        authenticated: !Sub ${LabRole}
+        unauthenticated: !Sub ${LabRole}
+
+  # Permissions
+  # AllowS3ToCallLambdaPermission:
+  #   Type: AWS::Lambda::Permission
+  #   Properties:
+  #     Action: lambda:InvokeFunction
+  #     FunctionName: !Ref ObjectDetectionFunction
+  #     Principal: s3.amazonaws.com
+  #     SourceArn: !GetAtt S3Bucket.Arn
+
+Outputs:
+  UserPoolId:
+    Value: !Ref UserPool
+    Export:
+      Name: "UserPool::Id"
+  UserPoolClientId:
+    Value: !Ref UserPoolClient
+    Export:
+      Name: "UserPoolClient::Id"
+  IdentityPoolId:
+    Value: !Ref IdentityPool
+    Export:
+      Name: "IdentityPool::Id"
+  API:
+    Description: "API Gateway endpoint URL for Prod stage for Object Detection function"
+    Value: !Sub "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiGatewayApi.Stage}/"
+  ObjectDetectionFunction:
+    Description: "S3 triggered Object Detection Lambda Function ARN" # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+    Value: !GetAtt ObjectDetectionFunction.Arn
+  # ObjectDetectionFunctionIamRole:
+  #   Description: "Implicit IAM Role created for S3 triggered Object Detection function"
+  #   Value: !GetAtt ObjectDetectionFunctionRole.Arn
