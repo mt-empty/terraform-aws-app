@@ -6,6 +6,11 @@
   - [Repository Setup](#repository-setup)
     - [run pre-commit hooks manually](#run-pre-commit-hooks-manually)
     - [Architecture](#architecture)
+  - [3 backend deployment options](#3-backend-deployment-options)
+    - [Cloudformation](#cloudformation)
+    - [Terraform](#terraform)
+    - [Terraform using serverless modules](#terraform-using-serverless-modules)
+  - [Frontend](#frontend)
 
 ## Repository Setup
 
@@ -19,3 +24,24 @@ To configure precommit, run:
 ### Architecture
 
 ![](./architecture.png)
+
+
+## 3 backend deployment options
+
+### Cloudformation
+
+Completed
+
+### Terraform
+
+Partially completed,
+
+TODO:
+- [ ] Cognito authorization
+### Terraform using serverless modules
+
+Work in progress
+
+## Frontend
+
+Work in progress
