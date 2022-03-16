@@ -1,7 +1,7 @@
 import React, { useState} from "react";
-import { encodeToBase64} from './util.js';
+import { uploadImage} from '../util.js';
 
-const Upload = () => {
+const Detect = () => {
     const [selectedImage, setSelectedImage] = useState(null);
     return (
       <div>
@@ -10,7 +10,7 @@ const Upload = () => {
           <div>
           <img width={"25rem"} src={URL.createObjectURL(selectedImage)} />
           <br />
-          <button onClick={()=>setSelectedImage(null)}>Remove</button>
+          <button onClick={()=>setSelectedImage(null)}>Detect</button>
           </div>
         )}
         <br />
@@ -27,4 +27,4 @@ const Upload = () => {
     );
 };
 
-export default Upload;
+export default Detect;
