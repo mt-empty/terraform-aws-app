@@ -1,0 +1,9 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "terraform-aws"
+s3_prefix = "terraform-aws"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
