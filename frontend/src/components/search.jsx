@@ -1,16 +1,14 @@
 import React, { useState} from "react";
-import { encodeToBase64} from './util.js';
+import { uploadImage} from '../util.js';
 
-const Upload = () => {
+const Search = () => {
     const [selectedImage, setSelectedImage] = useState(null);
     return (
       <div>
-        <h1>Search the processed image with a tag</h1>
+        <h1>Search the processed images with a tag</h1>
         {selectedImage && (
           <div>
-          <img width={"25rem"} src={URL.createObjectURL(selectedImage)} />
-          <br />
-          <button onClick={()=>setSelectedImage(null)}>Remove</button>
+          <button onClick={()=>setSelectedImage(null)}>Search</button>
           </div>
         )}
         <br />
@@ -27,4 +25,4 @@ const Upload = () => {
     );
 };
 
-export default Upload;
+export default Search;

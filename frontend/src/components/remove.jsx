@@ -1,7 +1,7 @@
 import React, { useState} from "react";
-import { encodeToBase64} from './util.js';
+import { uploadImage} from '../util.js';
 
-const Upload = () => {
+const Remove = () => {
     const [selectedImage, setSelectedImage] = useState(null);
     return (
       <div>
@@ -17,7 +17,7 @@ const Upload = () => {
 
         <br />
         <input
-          type="file"
+          type="text"
           name="imageUpload"
           onChange={(event) => {
             setSelectedImage(event.target.files[0]);
@@ -27,4 +27,4 @@ const Upload = () => {
     );
 };
 
-export default Upload;
+export default Remove;
