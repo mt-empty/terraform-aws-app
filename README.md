@@ -37,7 +37,7 @@ Completed
 Partially completed,
 
 TODO:
-- [ ] follow [terraform naming convention](https://www.terraform-best-practices.com/naming) 
+- [ ] follow [terraform naming convention](https://www.terraform-best-practices.com/naming)
 - [ ] Cognito authorization
 ### Terraform using serverless modules
 
