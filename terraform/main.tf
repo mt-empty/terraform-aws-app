@@ -9,14 +9,21 @@ terraform {
   #     version        = "~> 3.27"
   #   }
   # }
-  required_version = ">= 0.14.9"
+  required_version = ">= 1.1.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.0"
+      version = "4.6.0"
     }
     null = {
       version = "~> 3.0.0"
+    }
+  }
+  cloud {
+    organization = "example-org-76fbff"
+
+    workspaces {
+      name = "aws-terraform-app"
     }
   }
 }
@@ -80,7 +87,7 @@ resource "aws_instance" "server" {
 
 
 resource "aws_s3_bucket" "S3Bucket" {
-  bucket = var.bucket_name
+  bucket        = var.bucket_name
   force_destroy = true
 }
 
@@ -241,11 +248,16 @@ resource "aws_iam_policy" "lambda" {
 # Lambda
 resource "aws_lambda_permission" "apigw_lambda" {
   for_each = {
-    Upload = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_api_gateway_rest_api.ApiGatewayApi.id}/*/${aws_api_gateway_method.UploadMethod.http_method}${aws_api_gateway_resource.Upload.path}",
-    Detect = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_api_gateway_rest_api.ApiGatewayApi.id}/*/${aws_api_gateway_method.DetectMethod.http_method}${aws_api_gateway_resource.Detect.path}",
-    Search = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_api_gateway_rest_api.ApiGatewayApi.id}/*/${aws_api_gateway_method.SearchMethod.http_method}${aws_api_gateway_resource.Search.path}",
-    Delete = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_api_gateway_rest_api.ApiGatewayApi.id}/*/${aws_api_gateway_method.DeleteMethod.http_method}${aws_api_gateway_resource.Delete.path}",
-    Remove = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_api_gateway_rest_api.ApiGatewayApi.id}/*/${aws_api_gateway_method.RemoveMethod.http_method}${aws_api_gateway_resource.Remove.path}"
+    Upload = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_apigatewayv2_api.ApiGatewayApi.id}/*/${aws_apigatewayv2_route.Upload.route_key}",
+    Detect = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_apigatewayv2_api.ApiGatewayApi.id}/*/${aws_apigatewayv2_route.Upload.route_key}",
+    Search = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_apigatewayv2_api.ApiGatewayApi.id}/*/${aws_apigatewayv2_route.Upload.route_key}",
+    Delete = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_apigatewayv2_api.ApiGatewayApi.id}/*/${aws_apigatewayv2_route.Upload.route_key}",
+    Remove = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_apigatewayv2_api.ApiGatewayApi.id}/*/${aws_apigatewayv2_route.Upload.route_key}",
+    # Upload = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_apigatewayv2_api.ApiGatewayApi.id}/*/${aws_api_gateway_method.UploadMethod.http_method}${aws_api_gateway_resource.Upload.path}",
+    # Detect = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_apigatewayv2_api.ApiGatewayApi.id}/*/${aws_api_gateway_method.DetectMethod.http_method}${aws_api_gateway_resource.Detect.path}",
+    # Search = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_apigatewayv2_api.ApiGatewayApi.id}/*/${aws_api_gateway_method.SearchMethod.http_method}${aws_api_gateway_resource.Search.path}",
+    # Delete = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_apigatewayv2_api.ApiGatewayApi.id}/*/${aws_api_gateway_method.DeleteMethod.http_method}${aws_api_gateway_resource.Delete.path}",
+    # Remove = "arn:aws:execute-api:${var.region}:${local.account_id}:${aws_apigatewayv2_api.ApiGatewayApi.id}/*/${aws_api_gateway_method.RemoveMethod.http_method}${aws_api_gateway_resource.Remove.path}"
   }
   statement_id  = "AllowExecutionFromAPIGateway-${each.key}"
   action        = "lambda:InvokeFunction"
@@ -257,7 +269,7 @@ resource "aws_lambda_permission" "apigw_lambda" {
   # within API Gateway REST API.
   # source_arn = "${aws_api_gateway_rest_api.ApiGatewayApi.execution_arn}/*/*/*"
   source_arn = each.value
-  }
+}
 
 
 resource "aws_lambda_function" "ObjectDetectionFunction" {
@@ -290,199 +302,117 @@ resource "aws_lambda_function" "ObjectDetectionFunction" {
 
 # for api gateway best to use the serverless module
 # https://registry.terraform.io/modules/terraform-aws-modules/apigateway-v2/aws/latest
-resource "aws_api_gateway_rest_api" "ApiGatewayApi" {
+resource "aws_apigatewayv2_api" "ApiGatewayApi" {
   depends_on = [
     aws_lambda_function.ObjectDetectionFunction
   ]
-  name = "ApiGatewayApi"
-
-}
-
-resource "aws_api_gateway_resource" "Upload" {
-  rest_api_id = aws_api_gateway_rest_api.ApiGatewayApi.id
-  parent_id   = aws_api_gateway_rest_api.ApiGatewayApi.root_resource_id
-  path_part   = "upload"
-}
-
-resource "aws_api_gateway_method" "UploadMethod" {
-  rest_api_id   = aws_api_gateway_rest_api.ApiGatewayApi.id
-  resource_id   = aws_api_gateway_resource.Upload.id
-  http_method   = "PUT"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "UploadIntegration" {
-  rest_api_id             = aws_api_gateway_rest_api.ApiGatewayApi.id
-  resource_id             = aws_api_gateway_resource.Upload.id
-  http_method             = aws_api_gateway_method.UploadMethod.http_method
-  type                    = "AWS_PROXY"
-  integration_http_method = "POST"
-  uri                     = aws_lambda_function.ObjectDetectionFunction.invoke_arn
-  timeout_milliseconds    = 29000
-
-  request_parameters = {
-    "integration.request.header.X-Authorization" = "'static'"
+  protocol_type = "HTTP"
+  name          = "ApiGatewayApi"
+  cors_configuration {
+    allow_origins = ["*"]
+    allow_methods = ["Get", "POST", "PUT", "OPTIONS"]
+    allow_headers = ["*"]
+    max_age       = 500
   }
 
-  # Transforms the incoming XML request to JSON
-  request_templates = {
-    "application/xml" = <<EOF
-{
-   "body" : $input.json('$')
-}
-EOF
-  }
 }
 
 
-resource "aws_api_gateway_resource" "Detect" {
-  rest_api_id = aws_api_gateway_rest_api.ApiGatewayApi.id
-  parent_id   = aws_api_gateway_rest_api.ApiGatewayApi.root_resource_id
-  path_part   = "detect"
+resource "aws_apigatewayv2_integration" "UploadIntegration" {
+  api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+  integration_uri    = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+  payload_format_version = "2.0"
 }
 
-resource "aws_api_gateway_method" "DetectMethod" {
-  rest_api_id   = aws_api_gateway_rest_api.ApiGatewayApi.id
-  resource_id   = aws_api_gateway_resource.Detect.id
-  http_method   = "POST"
-  authorization = "NONE"
+resource "aws_apigatewayv2_route" "Upload" {
+  api_id    = aws_apigatewayv2_api.ApiGatewayApi.id
+  route_key = "PUT /upload"
+
+  target = "integrations/${aws_apigatewayv2_integration.UploadIntegration.id}"
 }
 
-resource "aws_api_gateway_integration" "DetectIntegration" {
-  rest_api_id             = aws_api_gateway_rest_api.ApiGatewayApi.id
-  resource_id             = aws_api_gateway_resource.Detect.id
-  http_method             = aws_api_gateway_method.DetectMethod.http_method
-  type                    = "AWS_PROXY"
-  integration_http_method = "POST"
-  uri                     = aws_lambda_function.ObjectDetectionFunction.invoke_arn
-  timeout_milliseconds    = 29000
-
-  request_parameters = {
-    "integration.request.header.X-Authorization" = "'static'"
-  }
-
-  # Transforms the incoming XML request to JSON
-  request_templates = {
-    "application/xml" = <<EOF
-{
-   "body" : $input.json('$')
+resource "aws_apigatewayv2_integration" "DetectIntegration" {
+  api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+  integration_uri    = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+  payload_format_version = "2.0"
 }
-EOF
-  }
+
+resource "aws_apigatewayv2_route" "Detect" {
+  api_id    = aws_apigatewayv2_api.ApiGatewayApi.id
+  route_key = "POST /detect"
+
+  target = "integrations/${aws_apigatewayv2_integration.DetectIntegration.id}"
 }
 
 
-resource "aws_api_gateway_resource" "Search" {
-  rest_api_id = aws_api_gateway_rest_api.ApiGatewayApi.id
-  parent_id   = aws_api_gateway_rest_api.ApiGatewayApi.root_resource_id
-  path_part   = "search"
+resource "aws_apigatewayv2_integration" "SearchIntegration" {
+  api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+  integration_uri    = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+  payload_format_version = "2.0"
 }
 
-resource "aws_api_gateway_method" "SearchMethod" {
-  rest_api_id   = aws_api_gateway_rest_api.ApiGatewayApi.id
-  resource_id   = aws_api_gateway_resource.Search.id
-  http_method   = "POST"
-  authorization = "NONE"
-}
+resource "aws_apigatewayv2_route" "Search" {
+  api_id    = aws_apigatewayv2_api.ApiGatewayApi.id
+  route_key = "POST /search"
 
-resource "aws_api_gateway_integration" "SearchIntegration" {
-  rest_api_id             = aws_api_gateway_rest_api.ApiGatewayApi.id
-  resource_id             = aws_api_gateway_resource.Search.id
-  http_method             = aws_api_gateway_method.SearchMethod.http_method
-  type                    = "AWS_PROXY"
-  integration_http_method = "POST"
-  uri                     = aws_lambda_function.ObjectDetectionFunction.invoke_arn
-  timeout_milliseconds    = 29000
-
-  request_parameters = {
-    "integration.request.header.X-Authorization" = "'static'"
-  }
-
-  # Transforms the incoming XML request to JSON
-  request_templates = {
-    "application/xml" = <<EOF
-{
-   "body" : $input.json('$')
-}
-EOF
-  }
+  target = "integrations/${aws_apigatewayv2_integration.SearchIntegration.id}"
 }
 
 
-resource "aws_api_gateway_resource" "Delete" {
-  rest_api_id = aws_api_gateway_rest_api.ApiGatewayApi.id
-  parent_id   = aws_api_gateway_rest_api.ApiGatewayApi.root_resource_id
-  path_part   = "delete"
+resource "aws_apigatewayv2_integration" "DeleteIntegration" {
+  api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+  integration_uri    = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+  payload_format_version = "2.0"
 }
 
-resource "aws_api_gateway_method" "DeleteMethod" {
-  rest_api_id   = aws_api_gateway_rest_api.ApiGatewayApi.id
-  resource_id   = aws_api_gateway_resource.Delete.id
-  http_method   = "POST"
-  authorization = "NONE"
+resource "aws_apigatewayv2_route" "Delete" {
+  api_id    = aws_apigatewayv2_api.ApiGatewayApi.id
+  route_key = "POST /delete"
+
+  target = "integrations/${aws_apigatewayv2_integration.DeleteIntegration.id}"
 }
 
-resource "aws_api_gateway_integration" "DeleteIntegration" {
-  rest_api_id             = aws_api_gateway_rest_api.ApiGatewayApi.id
-  resource_id             = aws_api_gateway_resource.Delete.id
-  http_method             = aws_api_gateway_method.DeleteMethod.http_method
-  type                    = "AWS_PROXY"
-  integration_http_method = "POST"
-  uri                     = aws_lambda_function.ObjectDetectionFunction.invoke_arn
-  timeout_milliseconds    = 29000
-
-  request_parameters = {
-    "integration.request.header.X-Authorization" = "'static'"
-  }
-
-  # Transforms the incoming XML request to JSON
-  request_templates = {
-    "application/xml" = <<EOF
-{
-   "body" : $input.json('$')
-}
-EOF
-  }
+resource "aws_apigatewayv2_integration" "RemoveIntegration" {
+  api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+  integration_uri    = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+  payload_format_version = "2.0"
 }
 
+resource "aws_apigatewayv2_route" "Remove" {
+  api_id    = aws_apigatewayv2_api.ApiGatewayApi.id
+  route_key = "POST /remove"
 
-resource "aws_api_gateway_resource" "Remove" {
-  rest_api_id = aws_api_gateway_rest_api.ApiGatewayApi.id
-  parent_id   = aws_api_gateway_rest_api.ApiGatewayApi.root_resource_id
-  path_part   = "remove"
+  target = "integrations/${aws_apigatewayv2_integration.RemoveIntegration.id}"
 }
 
-resource "aws_api_gateway_method" "RemoveMethod" {
-  rest_api_id   = aws_api_gateway_rest_api.ApiGatewayApi.id
-  resource_id   = aws_api_gateway_resource.Remove.id
-  http_method   = "POST"
-  authorization = "NONE"
+resource "aws_apigatewayv2_integration" "HealthIntegration" {
+  api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+  integration_uri    = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+  payload_format_version = "2.0"
 }
 
-resource "aws_api_gateway_integration" "RemoveIntegration" {
-  rest_api_id             = aws_api_gateway_rest_api.ApiGatewayApi.id
-  resource_id             = aws_api_gateway_resource.Remove.id
-  http_method             = aws_api_gateway_method.RemoveMethod.http_method
-  type                    = "AWS_PROXY"
-  integration_http_method = "POST"
-  uri                     = aws_lambda_function.ObjectDetectionFunction.invoke_arn
-  timeout_milliseconds    = 29000
+resource "aws_apigatewayv2_route" "Health" {
+  api_id    = aws_apigatewayv2_api.ApiGatewayApi.id
+  route_key = "GET /health"
 
-  request_parameters = {
-    "integration.request.header.X-Authorization" = "'static'"
-  }
+  target = "integrations/${aws_apigatewayv2_integration.HealthIntegration.id}"
+}
 
-  # Transforms the incoming XML request to JSON
-  request_templates = {
-    "application/xml" = <<EOF
-{
-   "body" : $input.json('$')
-}
-EOF
-  }
-}
-resource "aws_api_gateway_deployment" "APIDeployment" {
-  rest_api_id = aws_api_gateway_rest_api.ApiGatewayApi.id
+
+resource "aws_apigatewayv2_deployment" "APIDeployment" {
+  api_id = aws_apigatewayv2_api.ApiGatewayApi.id
   triggers = {
     # NOTE: The configuration below will satisfy ordering considerations,
     #       but not pick up all future REST API changes. More advanced patterns
@@ -492,34 +422,253 @@ resource "aws_api_gateway_deployment" "APIDeployment" {
     #       resources will show a difference after the initial implementation.
     #       It will stabilize to only change when resources change afterwards.
     redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.Upload.id,
-      aws_api_gateway_method.UploadMethod.id,
-      aws_api_gateway_integration.UploadIntegration.id,
-      aws_api_gateway_resource.Detect.id,
-      aws_api_gateway_method.DetectMethod.id,
-      aws_api_gateway_integration.DetectIntegration.id,
-      aws_api_gateway_resource.Search.id,
-      aws_api_gateway_method.SearchMethod.id,
-      aws_api_gateway_integration.SearchIntegration.id,
-      aws_api_gateway_resource.Delete.id,
-      aws_api_gateway_method.DeleteMethod.id,
-      aws_api_gateway_integration.DeleteIntegration.id,
-      aws_api_gateway_resource.Remove.id,
-      aws_api_gateway_method.RemoveMethod.id,
-      aws_api_gateway_integration.RemoveIntegration.id,
+      aws_apigatewayv2_route.Upload.id,
+      aws_apigatewayv2_integration.UploadIntegration.id,
+      aws_apigatewayv2_route.Detect.id,
+      aws_apigatewayv2_integration.DetectIntegration.id,
+      aws_apigatewayv2_route.Search.id,
+      aws_apigatewayv2_integration.SearchIntegration.id,
+      aws_apigatewayv2_route.Delete.id,
+      aws_apigatewayv2_integration.DeleteIntegration.id,
+      aws_apigatewayv2_route.Remove.id,
+      aws_apigatewayv2_integration.RemoveIntegration.id,
+      aws_apigatewayv2_route.Health.id,
+      aws_apigatewayv2_integration.HealthIntegration.id,
     ]))
   }
-
   lifecycle {
     create_before_destroy = true
   }
 }
 
-resource "aws_api_gateway_stage" "APIStageName" {
-  deployment_id = aws_api_gateway_deployment.APIDeployment.id
-  rest_api_id   = aws_api_gateway_rest_api.ApiGatewayApi.id
-  stage_name    = "prod"
+resource "aws_apigatewayv2_stage" "APIStageName" {
+  api_id        = aws_apigatewayv2_api.ApiGatewayApi.id
+  deployment_id = aws_apigatewayv2_deployment.APIDeployment.id
+  name          = "prod"
 }
+
+# resource "aws_api_gateway_resource" "Upload" {
+#   rest_api_id = aws_apigatewayv2_api.ApiGatewayApi.id
+#   parent_id   = aws_apigatewayv2_api.ApiGatewayApi.root_resource_id
+#   path_part   = "upload"
+# }
+
+# resource "aws_api_gateway_method" "UploadMethod" {
+#   rest_api_id   = aws_apigatewayv2_api.ApiGatewayApi.id
+#   resource_id   = aws_api_gateway_resource.Upload.id
+#   http_method   = "PUT"
+#   authorization = "NONE"
+# }
+
+# resource "aws_api_gateway_integration" "UploadIntegration" {
+#   rest_api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
+#   resource_id             = aws_api_gateway_resource.Upload.id
+#   http_method             = aws_api_gateway_method.UploadMethod.http_method
+#   type                    = "AWS_PROXY"
+#   integration_http_method = "POST"
+#   uri                     = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+#   timeout_milliseconds    = 29000
+
+#   request_parameters = {
+#     "integration.request.header.X-Authorization" = "'static'"
+#   }
+
+#   # Transforms the incoming XML request to JSON
+#   request_templates = {
+#     "application/xml" = <<EOF
+# {
+#    "body" : $input.json('$')
+# }
+# EOF
+#   }
+# }
+
+
+# resource "aws_api_gateway_resource" "Detect" {
+#   rest_api_id = aws_apigatewayv2_api.ApiGatewayApi.id
+#   parent_id   = aws_apigatewayv2_api.ApiGatewayApi.root_resource_id
+#   path_part   = "detect"
+# }
+
+# resource "aws_api_gateway_method" "DetectMethod" {
+#   rest_api_id   = aws_apigatewayv2_api.ApiGatewayApi.id
+#   resource_id   = aws_api_gateway_resource.Detect.id
+#   http_method   = "POST"
+#   authorization = "NONE"
+# }
+
+# resource "aws_api_gateway_integration" "DetectIntegration" {
+#   rest_api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
+#   resource_id             = aws_api_gateway_resource.Detect.id
+#   http_method             = aws_api_gateway_method.DetectMethod.http_method
+#   type                    = "AWS_PROXY"
+#   integration_http_method = "POST"
+#   uri                     = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+#   timeout_milliseconds    = 29000
+
+#   request_parameters = {
+#     "integration.request.header.X-Authorization" = "'static'"
+#   }
+
+#   # Transforms the incoming XML request to JSON
+#   request_templates = {
+#     "application/xml" = <<EOF
+# {
+#    "body" : $input.json('$')
+# }
+# EOF
+#   }
+# }
+
+
+# resource "aws_api_gateway_resource" "Search" {
+#   rest_api_id = aws_apigatewayv2_api.ApiGatewayApi.id
+#   parent_id   = aws_apigatewayv2_api.ApiGatewayApi.root_resource_id
+#   path_part   = "search"
+# }
+
+# resource "aws_api_gateway_method" "SearchMethod" {
+#   rest_api_id   = aws_apigatewayv2_api.ApiGatewayApi.id
+#   resource_id   = aws_api_gateway_resource.Search.id
+#   http_method   = "POST"
+#   authorization = "NONE"
+# }
+
+# resource "aws_api_gateway_integration" "SearchIntegration" {
+#   rest_api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
+#   resource_id             = aws_api_gateway_resource.Search.id
+#   http_method             = aws_api_gateway_method.SearchMethod.http_method
+#   type                    = "AWS_PROXY"
+#   integration_http_method = "POST"
+#   uri                     = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+#   timeout_milliseconds    = 29000
+
+#   request_parameters = {
+#     "integration.request.header.X-Authorization" = "'static'"
+#   }
+
+#   # Transforms the incoming XML request to JSON
+#   request_templates = {
+#     "application/xml" = <<EOF
+# {
+#    "body" : $input.json('$')
+# }
+# EOF
+#   }
+# }
+
+
+# resource "aws_api_gateway_resource" "Delete" {
+#   rest_api_id = aws_apigatewayv2_api.ApiGatewayApi.id
+#   parent_id   = aws_apigatewayv2_api.ApiGatewayApi.root_resource_id
+#   path_part   = "delete"
+# }
+
+# resource "aws_api_gateway_method" "DeleteMethod" {
+#   rest_api_id   = aws_apigatewayv2_api.ApiGatewayApi.id
+#   resource_id   = aws_api_gateway_resource.Delete.id
+#   http_method   = "POST"
+#   authorization = "NONE"
+# }
+
+# resource "aws_api_gateway_integration" "DeleteIntegration" {
+#   rest_api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
+#   resource_id             = aws_api_gateway_resource.Delete.id
+#   http_method             = aws_api_gateway_method.DeleteMethod.http_method
+#   type                    = "AWS_PROXY"
+#   integration_http_method = "POST"
+#   uri                     = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+#   timeout_milliseconds    = 29000
+
+#   request_parameters = {
+#     "integration.request.header.X-Authorization" = "'static'"
+#   }
+
+#   # Transforms the incoming XML request to JSON
+#   request_templates = {
+#     "application/xml" = <<EOF
+# {
+#    "body" : $input.json('$')
+# }
+# EOF
+#   }
+# }
+
+
+# resource "aws_api_gateway_resource" "Remove" {
+#   rest_api_id = aws_apigatewayv2_api.ApiGatewayApi.id
+#   parent_id   = aws_apigatewayv2_api.ApiGatewayApi.root_resource_id
+#   path_part   = "remove"
+# }
+
+# resource "aws_api_gateway_method" "RemoveMethod" {
+#   rest_api_id   = aws_apigatewayv2_api.ApiGatewayApi.id
+#   resource_id   = aws_api_gateway_resource.Remove.id
+#   http_method   = "POST"
+#   authorization = "NONE"
+# }
+
+# resource "aws_api_gateway_integration" "RemoveIntegration" {
+#   rest_api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
+#   resource_id             = aws_api_gateway_resource.Remove.id
+#   http_method             = aws_api_gateway_method.RemoveMethod.http_method
+#   type                    = "AWS_PROXY"
+#   integration_http_method = "POST"
+#   uri                     = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+#   timeout_milliseconds    = 29000
+
+#   request_parameters = {
+#     "integration.request.header.X-Authorization" = "'static'"
+#   }
+
+#   # Transforms the incoming XML request to JSON
+#   request_templates = {
+#     "application/xml" = <<EOF
+# {
+#    "body" : $input.json('$')
+# }
+# EOF
+#   }
+# }
+# resource "aws_api_gateway_deployment" "APIDeployment" {
+#   rest_api_id = aws_apigatewayv2_api.ApiGatewayApi.id
+#   triggers = {
+#     # NOTE: The configuration below will satisfy ordering considerations,
+#     #       but not pick up all future REST API changes. More advanced patterns
+#     #       are possible, such as using the filesha1() function against the
+#     #       Terraform configuration file(s) or removing the .id references to
+#     #       calculate a hash against whole resources. Be aware that using whole
+#     #       resources will show a difference after the initial implementation.
+#     #       It will stabilize to only change when resources change afterwards.
+#     redeployment = sha1(jsonencode([
+#       aws_api_gateway_resource.Upload.id,
+#       aws_api_gateway_method.UploadMethod.id,
+#       aws_api_gateway_integration.UploadIntegration.id,
+#       aws_api_gateway_resource.Detect.id,
+#       aws_api_gateway_method.DetectMethod.id,
+#       aws_api_gateway_integration.DetectIntegration.id,
+#       aws_api_gateway_resource.Search.id,
+#       aws_api_gateway_method.SearchMethod.id,
+#       aws_api_gateway_integration.SearchIntegration.id,
+#       aws_api_gateway_resource.Delete.id,
+#       aws_api_gateway_method.DeleteMethod.id,
+#       aws_api_gateway_integration.DeleteIntegration.id,
+#       aws_api_gateway_resource.Remove.id,
+#       aws_api_gateway_method.RemoveMethod.id,
+#       aws_api_gateway_integration.RemoveIntegration.id,
+#     ]))
+#   }
+
+#   lifecycle {
+#     create_before_destroy = true
+#   }
+# }
+
+# resource "aws_api_gateway_stage" "APIStageName" {
+#   deployment_id = aws_api_gateway_deployment.APIDeployment.id
+#   rest_api_id   = aws_apigatewayv2_api.ApiGatewayApi.id
+#   stage_name    = "prod"
+# }
 
 resource "aws_lambda_invocation" "LambdaTrigger" {
   function_name = aws_lambda_function.ObjectDetectionFunction.function_name
