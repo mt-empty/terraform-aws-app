@@ -29,7 +29,6 @@ terraform {
 }
 
 provider "aws" {
-  profile = "default"
   region  = var.region
 }
 
@@ -319,10 +318,10 @@ resource "aws_apigatewayv2_api" "ApiGatewayApi" {
 
 
 resource "aws_apigatewayv2_integration" "UploadIntegration" {
-  api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
-  integration_type   = "AWS_PROXY"
-  integration_method = "POST"
-  integration_uri    = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+  api_id                 = aws_apigatewayv2_api.ApiGatewayApi.id
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  integration_uri        = aws_lambda_function.ObjectDetectionFunction.invoke_arn
   payload_format_version = "2.0"
 }
 
@@ -334,10 +333,10 @@ resource "aws_apigatewayv2_route" "Upload" {
 }
 
 resource "aws_apigatewayv2_integration" "DetectIntegration" {
-  api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
-  integration_type   = "AWS_PROXY"
-  integration_method = "POST"
-  integration_uri    = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+  api_id                 = aws_apigatewayv2_api.ApiGatewayApi.id
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  integration_uri        = aws_lambda_function.ObjectDetectionFunction.invoke_arn
   payload_format_version = "2.0"
 }
 
@@ -350,10 +349,10 @@ resource "aws_apigatewayv2_route" "Detect" {
 
 
 resource "aws_apigatewayv2_integration" "SearchIntegration" {
-  api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
-  integration_type   = "AWS_PROXY"
-  integration_method = "POST"
-  integration_uri    = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+  api_id                 = aws_apigatewayv2_api.ApiGatewayApi.id
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  integration_uri        = aws_lambda_function.ObjectDetectionFunction.invoke_arn
   payload_format_version = "2.0"
 }
 
@@ -366,10 +365,10 @@ resource "aws_apigatewayv2_route" "Search" {
 
 
 resource "aws_apigatewayv2_integration" "DeleteIntegration" {
-  api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
-  integration_type   = "AWS_PROXY"
-  integration_method = "POST"
-  integration_uri    = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+  api_id                 = aws_apigatewayv2_api.ApiGatewayApi.id
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  integration_uri        = aws_lambda_function.ObjectDetectionFunction.invoke_arn
   payload_format_version = "2.0"
 }
 
@@ -381,10 +380,10 @@ resource "aws_apigatewayv2_route" "Delete" {
 }
 
 resource "aws_apigatewayv2_integration" "RemoveIntegration" {
-  api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
-  integration_type   = "AWS_PROXY"
-  integration_method = "POST"
-  integration_uri    = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+  api_id                 = aws_apigatewayv2_api.ApiGatewayApi.id
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  integration_uri        = aws_lambda_function.ObjectDetectionFunction.invoke_arn
   payload_format_version = "2.0"
 }
 
@@ -396,10 +395,10 @@ resource "aws_apigatewayv2_route" "Remove" {
 }
 
 resource "aws_apigatewayv2_integration" "HealthIntegration" {
-  api_id             = aws_apigatewayv2_api.ApiGatewayApi.id
-  integration_type   = "AWS_PROXY"
-  integration_method = "POST"
-  integration_uri    = aws_lambda_function.ObjectDetectionFunction.invoke_arn
+  api_id                 = aws_apigatewayv2_api.ApiGatewayApi.id
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  integration_uri        = aws_lambda_function.ObjectDetectionFunction.invoke_arn
   payload_format_version = "2.0"
 }
 

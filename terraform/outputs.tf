@@ -5,7 +5,8 @@ output "instance_ip_addr" {
 }
 
 output "api_endpoint" {
-  value = "https://${aws_api_gateway_rest_api.ApiGatewayApi.name}.execute-api.${var.region}.amazonaws.com/${aws_api_gateway_stage.APIStageName.stage_name}/"
+  description = "Ever green endpoint to the elastic beanstalk environment"
+  value       = aws_apigatewayv2_api.ApiGatewayApi.api_endpoint
 }
 # output "db_instance_addr" {
 #     value = aws_db_instance.db_instance.address
