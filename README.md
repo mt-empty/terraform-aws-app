@@ -4,22 +4,25 @@
 
 - [terraform-aws](#terraform-aws)
   - [Repository Setup](#repository-setup)
-    - [run pre-commit hooks manually](#run-pre-commit-hooks-manually)
+    - [Running pre-commit hooks manually](#running-pre-commit-hooks-manually)
     - [Architecture](#architecture)
   - [3 backend deployment options](#3-backend-deployment-options)
-    - [Cloudformation](#cloudformation)
+    - [AWS Cloudformation](#aws-cloudformation)
     - [Terraform](#terraform)
+      - [TODO:](#todo)
     - [Terraform using serverless modules](#terraform-using-serverless-modules)
   - [Frontend](#frontend)
 
+
 ## Repository Setup
 
-To configure precommit, run:
+Before you commit, please configure pre-commit with:
 
 `pre-commit install`
-### run pre-commit hooks manually
-`pre-commit run --all-files`
 
+### Running pre-commit hooks manually
+
+`pre-commit run --all-files`
 
 ### Architecture
 
@@ -28,17 +31,18 @@ To configure precommit, run:
 
 ## 3 backend deployment options
 
-### Cloudformation
+### AWS Cloudformation
 
 Completed
 
 ### Terraform
 
-Partially completed,
+Everything from scratch using only providers modules(without importing community modules)
 
-TODO:
+#### TODO:
 - [ ] follow [terraform naming convention](https://www.terraform-best-practices.com/naming)
 - [ ] Cognito authorization
+
 ### Terraform using serverless modules
 
 Work in progress
