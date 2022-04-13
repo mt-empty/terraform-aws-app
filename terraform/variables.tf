@@ -10,7 +10,7 @@ variable "region" {
 variable "bucket_name" {
   description = "s3 bucket name"
   type        = string
-  default     = "fit5225-ass2-images-prod"
+  default     = "object-detection-images-prod"
 }
 variable "function_name" {
   description = "object detection"
@@ -40,7 +40,7 @@ variable "db_name" {
 variable "db_user" {
   description = "username for database"
   type        = string
-  # sensitive = true
+  sensitive   = true
   default = "admin"
 }
 
@@ -48,6 +48,6 @@ variable "db_user" {
 variable "db_pass" {
   description = "password for database"
   type        = string
-  # sensitive = true
+  sensitive   = true
   default = "00abf0511a7f4cee5"
 }
