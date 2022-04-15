@@ -6,6 +6,7 @@ const Upload = () => {
     return (
       <div>
         <h1>Upload an image</h1>
+        <a>Upload an image and get a list of detected objects</a>
         {selectedImage && (
           <div>
           <img width={"500rem"} src={URL.createObjectURL(selectedImage)} />
@@ -21,7 +22,7 @@ const Upload = () => {
         <br />
         <input
           type="file"
-          name="imageUpload"
+          name="uploadedImage"
           onChange={(event) => {
             setSelectedImage(event.target.files[0]);
           }}
