@@ -8,7 +8,7 @@
 
 To deploy everything including the infrastructure, please refer to either [Cloudformation](../cloudformation) or [Terraform](../terraform).
 
-1. Install the [latest stable](https://nodejs.org/en/) version of NodeJS.
+1. Install the [latest stable](https://nodejs.org/en/) version of Node.js.
 
 2. Clone the repository
 3. Setup a `.env` file with the environment variables populated refer to [Environment Variables section](#environment-variables).
@@ -17,7 +17,6 @@ To deploy everything including the infrastructure, please refer to either [Cloud
 npm install
 ```
 5. Start the development server, run the following:
-
 ```bash
 npm start
 ```
