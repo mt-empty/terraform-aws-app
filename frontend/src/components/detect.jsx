@@ -6,6 +6,7 @@ const Detect = () => {
     return (
       <div>
         <h1>Detect an image</h1>
+        <a>Upload an image tag to get a list of similar images</a>
         {selectedImage && (
           <div>
           <img width={"25rem"} src={URL.createObjectURL(selectedImage)} />
@@ -18,7 +19,7 @@ const Detect = () => {
         <br />
         <input
           type="file"
-          name="imageUpload"
+          name="uploadedImage"
           onChange={(event) => {
             setSelectedImage(event.target.files[0]);
           }}
