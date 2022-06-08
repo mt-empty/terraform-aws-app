@@ -14,6 +14,24 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
+def getBody(event):
+    """
+    This function gets the body of the event
+
+    Args:
+        event (JSON): the event object
+
+    Returns:
+        JSON: the body of the event
+    """
+    if isinstance(event["body"], str):
+        body = json.loads(event["body"])
+    else:
+        body = event["body"]
+    logger.info(body)
+    return body
+
+
 def lambda_handler(event, context):
     """
     This function handles all Fat lambda methods
@@ -27,28 +45,25 @@ def lambda_handler(event, context):
     """
     try:
         logger.info(f" Event: {event}")
-        if isinstance(event["body"], str):
-            body = json.loads(event["body"])
-        else:
-            body = event["body"]
-
-        logger.info(event)
         path = event["rawPath"]
 
         if path == "/prod/upload":
-            return handle_upload(body)
+            return handle_upload(getBody(event))
 
         elif path == "/prod/detect":
-            return handle_detect(body)
+            return handle_detect(getBody(event))
 
         elif path == "/prod/remove":
-            return handle_remove(body)
+            return handle_remove(getBody(event))
 
         elif path == "/prod/delete":
-            return handle_delete(body)
+            return handle_delete(getBody(event))
 
         elif path == "/prod/search":
-            return handle_search(body)
+            return handle_search(getBody(event))
+
+        elif path == "/prod/health":
+            return {"statusCode": 200, "body": "OK"}
         else:
             return {
                 "body": json.dumps("resource not found"),
