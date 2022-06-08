@@ -4,6 +4,7 @@ import Detect from '/src/components/detect.jsx';
 import Search from '/src/components/search.jsx';
 import Remove from '/src/components/remove.jsx';
 import Delete from '/src/components/delete.jsx';
+
 function App() {
   return (
     <div>

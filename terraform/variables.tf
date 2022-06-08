@@ -10,7 +10,7 @@ variable "region" {
 variable "bucket_name" {
   description = "s3 bucket name"
   type        = string
-  default     = "object-detection-images-prod"
+  default     = "terraform-aws-images-prod"
 }
 variable "function_name" {
   description = "object detection"
