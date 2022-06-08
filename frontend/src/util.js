@@ -42,7 +42,7 @@ const detectImage = async (image) => {
     .catch((error) => console.error(error));
 };
 
-const deleteImage = async (image) => {
+const deleteAnImage = async (image) => {
   console.log(checkHealth());
 
   fetch(process.env.API_ENDPOINT.concat("delete"), {
@@ -56,7 +56,7 @@ const deleteImage = async (image) => {
     .catch((error) => console.error(error));
 };
 
-const removeImage = async (url, tags) => {
+const removeATag = async (url, tags) => {
   console.log(checkHealth());
 
   fetch(process.env.API_ENDPOINT.concat("remove"), {
@@ -71,7 +71,7 @@ const removeImage = async (url, tags) => {
     .catch((error) => console.error(error));
 };
 
-const searchImage = async (tags) => {
+const searchForImage = async (tags) => {
   console.log(checkHealth());
 
   fetch(process.env.API_ENDPOINT.concat("search"), {
@@ -96,12 +96,4 @@ const checkHealth = async () => {
     return console.error(error);
   }
 };
-
-export {
-  uploadImage,
-  detectImage,
-  deleteImage,
-  removeImage,
-  checkHealth,
-  searchImage,
-};
+export { uploadImage, detectImage, searchForImage, checkHealth, removeATag, deleteAnImage };
