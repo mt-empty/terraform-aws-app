@@ -1,6 +1,6 @@
 import "regenerator-runtime/runtime";
 
-const encodeToBase64 = (file) => {
+const encodeToBase64 = async (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => resolve(reader.result);
@@ -9,29 +9,99 @@ const encodeToBase64 = (file) => {
   });
 };
 
-const uploadImage = (image) => {
+const uploadImage = async (image) => {
   console.log(checkHealth());
-  return encodeToBase64(image)
-    .then((encodedImage) => {
-      // console.log(encodedImage)
-      fetch(process.env.API_ENDPOINT.concat("detect/"), {
-        method: "POST",
-        body: {
-          // image_name: image.name,
-          content: encodedImage,
-        },
-      });
-    })
-    .then((response) => response.json())
-    .catch((error) => console.error(error));
-};
-
-const checkHealth = () => {
-  return fetch(process.env.API_ENDPOINT.concat("health/"), {
-    method: "GET",
+  const encodedImage = (await encodeToBase64(image)).split(",")[1];
+  const payload = JSON.stringify({
+    image_name: image.name,
+    content: encodedImage,
+  });
+  fetch(process.env.API_ENDPOINT.concat("upload"), {
+    method: "PUT",
+    body: payload,
   })
-    .then((response) => response.json())
+    .then((res) => res.json())
+    .then(console.log)
     .catch((error) => console.error(error));
 };
 
-export { uploadImage };
+const detectImage = async (image) => {
+  console.log(checkHealth());
+  const encodedImage = (await encodeToBase64(image)).split(",")[1];
+
+  const payload = JSON.stringify({
+    content: encodedImage,
+  });
+
+  fetch(process.env.API_ENDPOINT.concat("detect"), {
+    method: "POST",
+    body: payload,
+  })
+    .then((res) => res.json())
+    .then(console.log)
+    .catch((error) => console.error(error));
+};
+
+const deleteImage = async (image) => {
+  console.log(checkHealth());
+
+  fetch(process.env.API_ENDPOINT.concat("delete"), {
+    method: "POST",
+    body: {
+      url: url,
+    },
+  })
+    .then((res) => res.json())
+    .then(console.log)
+    .catch((error) => console.error(error));
+};
+
+const removeImage = async (url, tags) => {
+  console.log(checkHealth());
+
+  fetch(process.env.API_ENDPOINT.concat("remove"), {
+    method: "POST",
+    body: {
+      url: url,
+      tags: tags,
+    },
+  })
+    .then((res) => res.json())
+    .then(console.log)
+    .catch((error) => console.error(error));
+};
+
+const searchImage = async (tags) => {
+  console.log(checkHealth());
+
+  fetch(process.env.API_ENDPOINT.concat("search"), {
+    method: "POST",
+    body: {
+      tags: tags,
+    },
+  })
+    .then((res) => res.json())
+    .then(console.log)
+    .catch((error) => console.error(error));
+};
+
+const checkHealth = async () => {
+  try {
+    const res = await fetch(process.env.API_ENDPOINT.concat("health"), {
+      method: "GET",
+    });
+    const message = await res.json();
+    return console.log(message);
+  } catch (error) {
+    return console.error(error);
+  }
+};
+
+export {
+  uploadImage,
+  detectImage,
+  deleteImage,
+  removeImage,
+  checkHealth,
+  searchImage,
+};
