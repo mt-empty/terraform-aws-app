@@ -1,8 +1,29 @@
-import React, { useState } from "react";
-import { deleteAnImage, uploadImage } from "../util.js";
+import React, { useState, useEffect } from "react";
+import { deleteAnImage } from "../util.js";
 
 const Delete = () => {
-  const [inputURL, setInputURL] = useState(null);
+  const [inputURL, setInputURL] = useState("");
+  const [results, setResults] = useState("");
+
+  useEffect(() => {
+    deleteImage();
+  }, [inputURL]);
+
+  const deleteImage = async () => {
+    const url = inputURL.trim();
+    if (url.length > 0) {
+      const results = await deleteAnImage(url);
+      console.log(results);
+      const data = JSON.parse(results.body);
+      console.log(data);
+      if (data["Results"] != null) {
+        setResults(data["Results"]);
+      } else {
+        console.log(data);
+        setResults([`No image matched the url: "${url}"`]);
+      }
+    }
+  };
 
   return (
     <div>
@@ -13,14 +34,22 @@ const Delete = () => {
       <br />
       <input
         type="text"
-        name="imageURL"
+        name="deleteImageURL"
+        id="deleteImageURL"
         placeholder="image URL"
-        onChange={(event) => {
-          console.log(event.target.value);
-          setInputURL(event.target.value);
-        }}
       />
-      <button onClick={() => deleteAnImage(inputURL.trim())}>Delete</button>
+      <button
+        onClick={() =>
+          setInputURL(document.getElementById("deleteImageURL").value)
+        }
+      >
+        Submit
+      </button>
+      <br />
+      <br />
+      <>Results:</>
+      <br />
+      <a>{results}</a>
     </div>
   );
 };
