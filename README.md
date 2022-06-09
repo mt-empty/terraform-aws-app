@@ -64,7 +64,7 @@ Completed
 Everything is written from scratch using only provider modules(without importing community modules)
 
 #### TODO:
-- [ ] follow [terraform naming convention](https://www.terraform-best-practices.com/naming)
+- [ ] Follow [terraform naming convention](https://www.terraform-best-practices.com/naming)
 - [ ] Cognito authorization
 
 ### Terraform using serverless modules
@@ -73,7 +73,7 @@ Work in progress
 
 ## Contributing
 
-Although, this is is a personal exercise, contributions are welcome!
+Although, this is a personal exercise, contributions are welcome!
 
 Before opening a PR:
 
