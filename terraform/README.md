@@ -42,13 +42,9 @@ No modules.
 | [aws_iam_policy.lambda](https://registry.terraform.io/providers/hashicorp/aws/4.6.0/docs/resources/iam_policy) | resource |
 | [aws_iam_role.iam_for_lambda](https://registry.terraform.io/providers/hashicorp/aws/4.6.0/docs/resources/iam_role) | resource |
 | [aws_iam_role_policy.lambda_policy](https://registry.terraform.io/providers/hashicorp/aws/4.6.0/docs/resources/iam_role_policy) | resource |
-| [aws_instance.server](https://registry.terraform.io/providers/hashicorp/aws/4.6.0/docs/resources/instance) | resource |
 | [aws_lambda_function.ObjectDetectionFunction](https://registry.terraform.io/providers/hashicorp/aws/4.6.0/docs/resources/lambda_function) | resource |
-| [aws_lambda_invocation.LambdaTrigger](https://registry.terraform.io/providers/hashicorp/aws/4.6.0/docs/resources/lambda_invocation) | resource |
 | [aws_lambda_permission.apigw_lambda](https://registry.terraform.io/providers/hashicorp/aws/4.6.0/docs/resources/lambda_permission) | resource |
 | [aws_s3_bucket.S3Bucket](https://registry.terraform.io/providers/hashicorp/aws/4.6.0/docs/resources/s3_bucket) | resource |
-| [aws_security_group.instances](https://registry.terraform.io/providers/hashicorp/aws/4.6.0/docs/resources/security_group) | resource |
-| [aws_security_group_rule.allow_http_inbound](https://registry.terraform.io/providers/hashicorp/aws/4.6.0/docs/resources/security_group_rule) | resource |
 | [null_resource.ecr_image](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [aws_caller_identity.current_identity](https://registry.terraform.io/providers/hashicorp/aws/4.6.0/docs/data-sources/caller_identity) | data source |
 | [aws_ecr_image.lambda_image](https://registry.terraform.io/providers/hashicorp/aws/4.6.0/docs/data-sources/ecr_image) | data source |
@@ -59,10 +55,10 @@ No modules.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_ami"></a> [ami](#input\_ami) | Amazon machine image for ec2 instance | `string` | `"ami-00abf0511a7f4cee5"` | no |
-| <a name="input_bucket_name"></a> [bucket\_name](#input\_bucket\_name) | s3 bucket name | `string` | `"object-detection-images-prod"` | no |
+| <a name="input_bucket_name"></a> [bucket\_name](#input\_bucket\_name) | s3 bucket name | `string` | `"terraform-aws-images-prod"` | no |
 | <a name="input_db_name"></a> [db\_name](#input\_db\_name) | name for database | `string` | `"server_db"` | no |
-| <a name="input_db_pass"></a> [db\_pass](#input\_db\_pass) | password for database | `string` | n/a | yes |
-| <a name="input_db_user"></a> [db\_user](#input\_db\_user) | username for database | `string` | n/a | yes |
+| <a name="input_db_pass"></a> [db\_pass](#input\_db\_pass) | password for database | `string` | `"00abf0511a7f4cee5"` | no |
+| <a name="input_db_user"></a> [db\_user](#input\_db\_user) | username for database | `string` | `"admin"` | no |
 | <a name="input_function_name"></a> [function\_name](#input\_function\_name) | object detection | `string` | `"object_detection"` | no |
 | <a name="input_instance_type"></a> [instance\_type](#input\_instance\_type) | ec2 instance type | `string` | `"t2.micro"` | no |
 | <a name="input_region"></a> [region](#input\_region) | Amazon region | `string` | `"ap-southeast-2"` | no |
@@ -72,5 +68,4 @@ No modules.
 | Name | Description |
 |------|-------------|
 | <a name="output_api_endpoint"></a> [api\_endpoint](#output\_api\_endpoint) | Ever green endpoint to the elastic beanstalk environment |
-| <a name="output_instance_ip_addr"></a> [instance\_ip\_addr](#output\_instance\_ip\_addr) | n/a |
 <!-- END_TF_DOCS -->
