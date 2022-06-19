@@ -41,7 +41,7 @@ variable "db_user" {
   description = "username for database"
   type        = string
   sensitive   = true
-  default = "admin"
+  default     = "admin"
 }
 
 
@@ -49,5 +49,5 @@ variable "db_pass" {
   description = "password for database"
   type        = string
   sensitive   = true
-  default = "00abf0511a7f4cee5"
+  default     = "00abf0511a7f4cee5"
 }
