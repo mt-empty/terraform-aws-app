@@ -35,15 +35,30 @@ jobs:
         id: init
         run: terraform init
 
+        # Download actions doesn't respect the working directory
+      - name: Download static site files
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-static-site
+          path: ${{ github.workspace }}/frontend/dist/
+
+      - run: pwd && ls -lha && ls -lha .. && ls -lha ../frontend && echo ${{ github.workspace }}
+      - run: ls -lha ${{ github.workspace }}/frontend/dist/
+
+      # check if artifacts exist
+      - name: Check if artifacts exist
+        run: test -d "${{ github.workspace }}/frontend/dist/" && echo "Found ${{ github.workspace }}/frontend/dist/ directory" || echo "No ${{ github.workspace }}/frontend/dist/ directory found"
+
       - name: Terraform Validate
         id: validate
         run: terraform validate -no-color
 
-      - name: Download static site files
-        uses: actions/download-artifact@v3
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ failure() }}
+        timeout-minutes: 10
         with:
-          name: dist
-          path: .dist/
+          limit-access-to-actor: true
 
       - name: Terraform Plan
         id: plan

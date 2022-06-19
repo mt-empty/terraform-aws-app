@@ -26,9 +26,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      # - run: ls -lha && ls -lha ./dist && pwd
+
+        # Upload actions doesn't respect the working directory
       - name: Archive production artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: dist
-          path: |
-            .dist/
+          name: frontend-static-site
+          if-no-files-found: error
+          path: ${{ github.workspace }}/frontend/dist/
