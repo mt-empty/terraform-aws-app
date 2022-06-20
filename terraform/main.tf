@@ -1,14 +1,4 @@
 terraform {
-  # required_providers {
-  #   aws = {
-  #     bucket         = "learnterraform"
-  #     source         = "hashicorp/aws"
-  #     region         = "ap-southeast-2"
-  #     dynamodb_table = "terraform-state-locking"
-  #     encrypt        = true
-  #     version        = "~> 3.27"
-  #   }
-  # }
   required_version = ">= 1.1.0"
   required_providers {
     aws = {
@@ -29,7 +19,7 @@ terraform {
 }
 
 provider "aws" {
-  region  = var.region
+  region = var.region
 }
 
 
@@ -165,24 +155,24 @@ resource "aws_iam_role_policy" "lambda_policy" {
 
 
 # allow it to create cloudwatch logs
-data "aws_iam_policy_document" "lambda" {
-  statement {
-    actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents"
-    ]
-    effect    = "Allow"
-    resources = ["*"]
-    sid       = "CreateCloudWatchLogs"
-  }
-}
+# data "aws_iam_policy_document" "lambda" {
+#   statement {
+#     actions = [
+#       "logs:CreateLogGroup",
+#       "logs:CreateLogStream",
+#       "logs:PutLogEvents"
+#     ]
+#     effect    = "Allow"
+#     resources = ["*"]
+#     sid       = "CreateCloudWatchLogs"
+#   }
+# }
 
-resource "aws_iam_policy" "lambda" {
-  name   = "${local.prefix}-lambda-policy"
-  path   = "/"
-  policy = data.aws_iam_policy_document.lambda.json
-}
+# resource "aws_iam_policy" "lambda" {
+#   name   = "${local.prefix}-lambda-policy"
+#   path   = "/"
+#   policy = data.aws_iam_policy_document.lambda.json
+# }
 
 
 # Lambda
@@ -249,7 +239,7 @@ resource "aws_apigatewayv2_api" "ApiGatewayApi" {
   name          = "ApiGatewayApi"
   cors_configuration {
     allow_origins = ["*"]
-    allow_methods = ["Get", "POST", "PUT", "OPTIONS"]
+    allow_methods = ["GET", "POST", "PUT", "OPTIONS"]
     allow_headers = ["*"]
     max_age       = 500
   }
@@ -400,3 +390,65 @@ resource "aws_apigatewayv2_stage" "APIStageName" {
 #     key2 = "value2"
 #   })
 # }
+
+# Build react app and upload to S3
+
+resource "null_resource" "populateAPIEndpoint" {
+
+  provisioner "local-exec" {
+    command = <<EOF
+            cd ../frontend
+            sed -i -r 's|https.*.com|${aws_apigatewayv2_api.ApiGatewayApi.api_endpoint}|g' .env
+            npm install
+            npm run build
+       EOF
+  }
+  # Map of String) A map of arbitrary strings that,
+  # when changed, will force the null resource to be replaced, re-running any associated provisioners.
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+}
+
+resource "aws_s3_bucket" "ReactAppBucket" {
+  depends_on = [
+    null_resource.populateAPIEndpoint
+  ]
+  bucket        = "object-detection-react-app"
+  force_destroy = true
+}
+
+# make the S3 bucket public
+resource "aws_s3_bucket_acl" "ReactAppBucketACL" {
+  bucket = aws_s3_bucket.ReactAppBucket.id
+  acl    = "public-read"
+}
+
+# enable static website hosting for s3 bucket
+resource "aws_s3_bucket_website_configuration" "this" {
+  bucket = aws_s3_bucket.ReactAppBucket.bucket
+
+  index_document {
+    suffix = "index.html"
+  }
+}
+
+# Upload react app to s3 bucket
+resource "aws_s3_object" "index" {
+  bucket = aws_s3_bucket.ReactAppBucket.id
+  key    = "index.html"
+
+  source       = "${path.module}/../frontend/dist/index.html"
+  # etag         = filemd5("${path.module}/../frontend/dist/index.html")
+  acl          = "public-read"
+  content_type = "text/html"
+}
+
+resource "aws_s3_object" "main" {
+  bucket = aws_s3_bucket.ReactAppBucket.id
+  key    = "main.js"
+
+  source = "${path.module}/../frontend/dist/main.js"
+  # etag   = filemd5("${path.module}/../frontend/dist/main.js")
+  acl    = "public-read"
+}
