@@ -1,9 +1,6 @@
 name: "Terraform"
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
     branches:
       - master
@@ -116,5 +113,5 @@ jobs:
 
       # only run apply if the context is workflow_dispatch
       - name: Terraform Apply
-        if: github.event_name == 'dispatch' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
         run: terraform apply -auto-approve
