@@ -7,6 +7,12 @@ on:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
+    inputs:
+      terraform_version:
+        description: "The version of Terraform to use"
+        required: true
+        default: "1.1.0"
 
 jobs:
   build:
@@ -21,11 +27,12 @@ jobs:
         working-directory: terraform/
     steps:
       - uses: actions/checkout@v3
-      - uses: hashicorp/setup-terraform@v1
+      - uses: hashicorp/setup-terraform@v2
         with:
+          terraform_version: ${{ inputs.terraform_version }}
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
           terraform_wrapper: false
-
+      - run: terraform version
       - name: Terraform fmt
         id: fmt
         run: terraform fmt -check
@@ -107,6 +114,7 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
-      # - name: Terraform Apply
-      #   if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-      #   run: terraform apply -auto-approve
+      # only run apply if the context is workflow_dispatch
+      - name: Terraform Apply
+        if: github.event_name == 'dispatch' && github.ref == 'refs/heads/master'
+        run: terraform apply -auto-approve
