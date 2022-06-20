@@ -438,7 +438,7 @@ resource "aws_s3_object" "index" {
   bucket = aws_s3_bucket.ReactAppBucket.id
   key    = "index.html"
 
-  source       = "${path.module}/../frontend/dist/index.html"
+  source = "${path.module}/../frontend/dist/index.html"
   # etag         = filemd5("${path.module}/../frontend/dist/index.html")
   acl          = "public-read"
   content_type = "text/html"
@@ -450,5 +450,5 @@ resource "aws_s3_object" "main" {
 
   source = "${path.module}/../frontend/dist/main.js"
   # etag   = filemd5("${path.module}/../frontend/dist/main.js")
-  acl    = "public-read"
+  acl = "public-read"
 }
