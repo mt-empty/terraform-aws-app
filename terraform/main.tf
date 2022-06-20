@@ -439,7 +439,7 @@ resource "aws_s3_object" "index" {
   key    = "index.html"
 
   source       = "${path.module}/../frontend/dist/index.html"
-  etag         = filemd5("${path.module}/../frontend/dist/index.html")
+  # etag         = filemd5("${path.module}/../frontend/dist/index.html")
   acl          = "public-read"
   content_type = "text/html"
 }
@@ -449,6 +449,6 @@ resource "aws_s3_object" "main" {
   key    = "main.js"
 
   source = "${path.module}/../frontend/dist/main.js"
-  etag   = filemd5("${path.module}/../frontend/dist/main.js")
+  # etag   = filemd5("${path.module}/../frontend/dist/main.js")
   acl    = "public-read"
 }
